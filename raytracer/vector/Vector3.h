@@ -35,21 +35,21 @@ public:
         return {x - target.x, y - target.y, z - target.z};
     }
 
-    [[nodiscard]] static Vector3 normalize(const std::unique_ptr<Vector3> & a) {
-        const double normalizedX = a->x / a->length();
-        const double normalizedY = a->y / a->length();
-        const double normalixedZ = a->z / a->length();
+    [[nodiscard]] static Vector3 normalize(const Vector3 & a) {
+        const double normalizedX = a.x / a.length();
+        const double normalizedY = a.y / a.length();
+        const double normalixedZ = a.z / a.length();
         return {normalizedX, normalizedY, normalixedZ};
     };;
 
-    static double dotProduct(const std::unique_ptr<Vector3> & a, const std::unique_ptr<Vector3> & b) {
-        return a->x * b->x + a->y * b->y + a->z * b->z;
+    static double dotProduct(const Vector3 & a, const Vector3 & b) {
+        return a.x * b.x + a.y * b.y + a.z * b.z;
     }
 
-    static Vector3 cross(const std::unique_ptr<Vector3> & a, const std::unique_ptr<Vector3> & b) {
-        const double z = a->x * b->y - (b->x * a -> y);
-        const double y = b->x * a-> z - a->x * b->z;
-        const double x = a->y * b->z - b->y * a->z;
+    static Vector3 cross(const Vector3 & a, const Vector3 & b) {
+        const double z = a.x * b.y - (b.x * a.y);
+        const double y = b.x * a.z - a.x * b.z;
+        const double x = a.y * b.z - b.y * a.z;
 
         return {x, y, z};
     }
