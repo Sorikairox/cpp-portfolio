@@ -14,6 +14,8 @@ class Pixel {
     mutable unsigned char green = 0;
     mutable unsigned char blue = 0;
     unsigned char alpha = 0;
+    int x = 0;
+    int y = 0;
     Pixel() {}
     Pixel(const unsigned char red, const unsigned char green, const unsigned char blue, const unsigned char alpha):
     red(red), green(green), blue(blue), alpha(alpha) {}
@@ -44,7 +46,8 @@ class Scene {
                     currentPixel = new Pixel{static_cast<unsigned>(255), static_cast<unsigned>(255), static_cast<unsigned>(255), 1};
 
                 this->pixels[currentIndex] = currentPixel;
-
+                currentPixel->x = i;
+                currentPixel->y = j;
                 currentPixel->blue = static_cast<unsigned>(255);
                 currentPixel->green = static_cast<unsigned>(255);
                 currentPixel->red = static_cast<unsigned>(255);
