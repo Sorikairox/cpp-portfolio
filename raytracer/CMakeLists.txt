@@ -6,7 +6,9 @@ project(raytracer)
 add_executable(raytracer MACOSX_BUNDLE main.cpp
         vector/Vector3.h
         camera/Camera.h
-        vector/Vector2.h)
+        vector/Vector2.h
+        sphere/Sphere.h
+        ray/Ray.h)
 
 project(vector3_test)
 include(FetchContent)
@@ -18,8 +20,11 @@ FetchContent_MakeAvailable(googletest)
 include(GoogleTest)
 add_executable(all_test vector/Vector3.test.cpp
         camera/Camera.test.cpp
+        sphere/Sphere.test.cpp
         camera/Camera.h
-        vector/Vector2.h)
+        vector/Vector2.h
+        sphere/Sphere.h
+        ray/Ray.h)
 target_link_libraries(
         all_test
         GTest::gtest_main
