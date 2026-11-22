@@ -7,10 +7,18 @@
 
 #include "../vector/Vector3.h"
 
+class Intersection {
+public:
+    double distance = INFINITY;
+    Vector3 normal = {0, 0, 0};
+    Vector3 position = {0, 0, 0};
+};
+
 class Ray {
     public:
     Vector3 origin = {0, 0, 0};
     mutable Vector3 direction = {0, 0, 0};
+    mutable Intersection intersection = {};
 
     Ray(Vector3 origin): origin(origin) {}
     Ray(Vector3 origin, Vector3 direction) : origin(origin), direction(direction) {

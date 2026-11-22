@@ -16,7 +16,7 @@ class Pixel {
     unsigned char alpha = 0;
     int x = 0;
     int y = 0;
-    Pixel() {}
+    Pixel() = default;
     Pixel(const unsigned char red, const unsigned char green, const unsigned char blue, const unsigned char alpha):
     red(red), green(green), blue(blue), alpha(alpha) {}
 };
@@ -37,7 +37,7 @@ class Scene {
     void addSphere(const Sphere &sphere) { spheres.push_back(sphere); }
 
     void render() {
-        Ray currentRay = Ray(this->camera.position);
+        auto currentRay = Ray(this->camera.position);
         for (int i = 0; i < this->camera.screenDimension.x; i++) {
             for (int j = 0; j < this->camera.screenDimension.y; j++) {
                 const double currentIndex = i + (j * this->camera.screenDimension.x);
@@ -51,9 +51,10 @@ class Scene {
                 currentPixel->blue = static_cast<unsigned>(255);
                 currentPixel->green = static_cast<unsigned>(255);
                 currentPixel->red = static_cast<unsigned>(255);
-                for (Sphere sphere : this->spheres) {
-                    currentRay.direction = this->camera.getScreenPixelVector(i, j);
-                    if (sphere.doesIntersect(currentRay)) {
+                currentRay.direction = this->camera.getScreenPixelVector(i, j);
+                currentRay.intersection = {};
+                for (const Sphere &sphere : this->spheres) {
+                    if (sphere.doesIntersect(&currentRay)) {
                         currentPixel->blue = sphere.color.b;
                         currentPixel->green = sphere.color.g;
                         currentPixel->red = sphere.color.r;
