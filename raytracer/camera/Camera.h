@@ -12,18 +12,19 @@
 #include "../vector/Vector3.h"
 
 class Camera {
-    Vector3 position;
     Vector3 target;
     Vector3 forward;
     Vector3 right;
     Vector3 up;
     double fovInDegrees = 60;
-    Vector2 screenDimension = {1920, 1080};
+
     Vector3 topLeftCorner;
     Vector3 pixelDirectionX;
     Vector3 pixelDirectionY;
 
 public:
+    Vector3 position;
+    Vector2 screenDimension = {1920, 1080};
     Vector3 &forwardVector() {
         return forward;
     }
@@ -56,7 +57,7 @@ public:
     };
 
     [[nodiscard]] Vector2 getHalfSizes() const {
-        const double halfHeight = std::tan(this->fovInDegrees * std::numbers::pi / 180 / 2);
+        const double halfHeight = std::tan(this->fovInDegrees *     std::numbers::pi / 180 / 2);
         const double aspect = this->screenDimension.x / this->screenDimension.y;
         const double halfWidth = halfHeight * aspect;
         return {halfWidth, halfHeight};
