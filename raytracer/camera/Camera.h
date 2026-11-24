@@ -37,7 +37,7 @@ public:
         return up;
     }
 
-    Camera(const Vector3 &pos, const Vector3 &tar) : position(pos), target(tar) {
+    Camera(const Vector3 &pos, const Vector3 &tar, double w, double h) : target(tar), position(pos), screenDimension(w, h) {
         forward = Vector3::normalize(target - pos);
         if (Vector3::normalize(forward) == Vector3{0, 0, 1}) {
             right = Vector3::normalize(Vector3::cross(forward, Vector3{0, 1, 0}));

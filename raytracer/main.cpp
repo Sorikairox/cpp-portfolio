@@ -7,14 +7,18 @@
 #include "SDL3/SDL.h"
 
 int main() {
+    int w;
+    int h;
     SDL_Init(SDL_INIT_VIDEO);
     SDL_Window *window = SDL_CreateWindow("Raytracer", 1920, 1080, SDL_WINDOW_FULLSCREEN);
     SDL_Renderer *renderer = SDL_CreateRenderer(window, nullptr);
+    SDL_GetRenderOutputSize(renderer, &w, &h);
 
-    auto sphere = Sphere({0, 25, 0}, 2, {255, 0, 0, 255});
-    const auto camera = Camera({0, 0, 0}, {0, 50, 0});
+    auto sphere = Sphere({0, 0, 0}, 10, {255, 0, 0, 255});
+    const auto camera = Camera({-50, 0, 0}, {0, 0, 0},  w, h);
     auto *scene = new Scene(camera);
     scene->addSphere(sphere);
+    scene->addLight(Light{Vector3{-50, 0, 500}, Vector3{0, 0, 0}});
 
     scene->render();
     SDL_RenderClear(renderer);
@@ -28,10 +32,7 @@ int main() {
         SDL_RenderPresent(renderer);
         while (SDL_WaitEvent(&event)) {
             switch (event.type) {
-                case SDL_EVENT_KEY_DOWN:
-                    SDL_DestroyRenderer(renderer);
-                    SDL_DestroyWindow(window);
-                    SDL_Quit();
+                case SDL_EVENT_KEY_DOWN :
                 case SDL_EVENT_QUIT:
                     SDL_DestroyRenderer(renderer);
                     SDL_DestroyWindow(window);

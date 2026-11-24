@@ -120,7 +120,7 @@ TEST(SphereIntersection, HeadOnHitStoresNearestPoint) {
     ASSERT_TRUE(sphere.doesIntersect(&ray));
     EXPECT_NEAR(ray.intersection.distance, 3, 1e-9);
     expectVectorNear(ray.intersection.position, {0, 0, -2});
-    expectVectorNear(ray.intersection.normal, {0, 0, -1});
+    expectVectorNear(ray.intersection.surfaceNormal, {0, 0, -1});
 }
 
 TEST(SphereIntersection, OffCenterHitHasTiltedNormal) {
@@ -130,7 +130,7 @@ TEST(SphereIntersection, OffCenterHitHasTiltedNormal) {
     ASSERT_TRUE(sphere.doesIntersect(&ray));
     EXPECT_NEAR(ray.intersection.distance, 4.2, 1e-9);
     expectVectorNear(ray.intersection.position, {0, 0.6, -0.8});
-    expectVectorNear(ray.intersection.normal, {0, 0.6, -0.8});
+    expectVectorNear(ray.intersection.surfaceNormal, {0, 0.6, -0.8});
 }
 
 TEST(SphereIntersection, NormalIsRelativeToSphereCenter) {
@@ -139,7 +139,7 @@ TEST(SphereIntersection, NormalIsRelativeToSphereCenter) {
     ASSERT_TRUE(sphere.doesIntersect(&ray));
     EXPECT_NEAR(ray.intersection.distance, 8, 1e-9);
     expectVectorNear(ray.intersection.position, {8, 0, 0});
-    expectVectorNear(ray.intersection.normal, {-1, 0, 0});
+    expectVectorNear(ray.intersection.surfaceNormal, {-1, 0, 0});
 }
 
 TEST(SphereIntersection, TangentHitIsPerpendicularToRay) {
@@ -148,8 +148,8 @@ TEST(SphereIntersection, TangentHitIsPerpendicularToRay) {
     ASSERT_TRUE(sphere.doesIntersect(&ray));
     EXPECT_NEAR(ray.intersection.distance, 5, 1e-9);
     expectVectorNear(ray.intersection.position, {0, 1, 0});
-    expectVectorNear(ray.intersection.normal, {0, 1, 0});
-    EXPECT_NEAR(Vector3::dotProduct(ray.intersection.normal, ray.direction), 0, 1e-9);
+    expectVectorNear(ray.intersection.surfaceNormal, {0, 1, 0});
+    EXPECT_NEAR(Vector3::dotProduct(ray.intersection.surfaceNormal, ray.direction), 0, 1e-9);
 }
 
 TEST(SphereIntersection, NormalIsUnitLength) {
@@ -157,8 +157,8 @@ TEST(SphereIntersection, NormalIsUnitLength) {
     Ray ray({-5, -5, 0}, {1, 1, 0});
     ASSERT_TRUE(sphere.doesIntersect(&ray));
     EXPECT_NEAR(ray.intersection.distance, 5 * std::sqrt(2.0) - 1, 1e-9);
-    EXPECT_NEAR(ray.intersection.normal.length(), 1, 1e-9);
-    expectVectorNear(ray.intersection.normal, {-1 / std::sqrt(2.0), -1 / std::sqrt(2.0), 0});
+    EXPECT_NEAR(ray.intersection.surfaceNormal.length(), 1, 1e-9);
+    expectVectorNear(ray.intersection.surfaceNormal, {-1 / std::sqrt(2.0), -1 / std::sqrt(2.0), 0});
 }
 
 TEST(SphereIntersection, HitPointLiesOnRayAndSphere) {
@@ -187,7 +187,7 @@ TEST(SphereIntersection, RayStartingInsideUsesExitPoint) {
     ASSERT_TRUE(sphere.doesIntersect(&ray));
     EXPECT_NEAR(ray.intersection.distance, 3, 1e-9);
     expectVectorNear(ray.intersection.position, {3, 0, 0});
-    expectVectorNear(ray.intersection.normal, {1, 0, 0});
+    expectVectorNear(ray.intersection.surfaceNormal, {1, 0, 0});
 }
 
 TEST(SphereIntersection, MissLeavesIntersectionUntouched) {
@@ -196,7 +196,7 @@ TEST(SphereIntersection, MissLeavesIntersectionUntouched) {
     ASSERT_FALSE(sphere.doesIntersect(&ray));
     EXPECT_EQ(ray.intersection.distance, INFINITY);
     expectVectorNear(ray.intersection.position, {0, 0, 0});
-    expectVectorNear(ray.intersection.normal, {0, 0, 0});
+    expectVectorNear(ray.intersection.surfaceNormal, {0, 0, 0});
 }
 
 TEST(SphereIntersection, SphereBehindLeavesIntersectionUntouched) {
