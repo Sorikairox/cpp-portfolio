@@ -19,7 +19,7 @@ int main() {
     auto *scene = new Scene(camera);
     scene->addSphere(sphere);
     scene->addLight(Light{Vector3{-50, 0, 500}, Vector3{0, 0, 0}});
-
+    scene->addPlane(Plane{Vector3{0,0,-50}, Vector3{0,0,1}, {255, 255,255}});
     scene->render();
     SDL_RenderClear(renderer);
     for (Pixel const *pixel: scene->pixels) {

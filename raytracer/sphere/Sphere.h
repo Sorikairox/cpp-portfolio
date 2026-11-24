@@ -7,44 +7,20 @@
 
 #include <complex>
 
+#include "../Entity.h"
 #include "../vector/Vector3.h"
 #include "../ray/Ray.h"
 
-struct Color {
-    unsigned char r = 0;
-    unsigned char g = 0;
-    unsigned char b = 0;
-    unsigned char a = 0;
-
-    [[nodiscard]] Vector3 albedoMultiplication(const Color &other) const {
-        const Vector3 thisAlbedo = {
-            static_cast<double>(this->r) / 255, static_cast<double>(this->g) / 255, static_cast<double>(this->b) / 255
-        };
-
-        const Vector3 otherAlbedo = {
-            static_cast<double> (other.r) / 255,
-            static_cast<double> (other.g) / 255,
-            static_cast<double> (other.b) / 255
-        };
-
-        return thisAlbedo * otherAlbedo;
-    }
-};
-
-class Sphere {
+class Sphere: public Entity {
 public:
-    Vector3 origin = {0, 0, 0};
     double radius = 0;
-    Color color = {0, 0, 0};
 
-    Sphere(const Vector3 &origin, const double &radius) : origin(origin), radius(radius) {
+    Sphere(const Vector3 &origin, const double &radius) : Entity{origin}, radius(radius) {
     };
 
-    Sphere(const Vector3 &origin, const double &radius, const Color &color) : origin(origin), radius(radius),
-                                                                              color(color) {
-    };
+    Sphere(const Vector3 &origin, const double &radius, const Color &color) : Entity{origin, color}, radius(radius) {};
 
-    bool doesIntersect(const Ray *ray) const {
+    virtual bool doesIntersect(const Ray *ray) const {
         const double b = 2.0 * Vector3::dotProduct(ray->direction, (ray->origin - this->origin));
         const double c = Vector3::dotProduct((ray->origin - this->origin), (ray->origin - this->origin)) - std::pow(
                              this->radius, 2);

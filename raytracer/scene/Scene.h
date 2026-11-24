@@ -6,8 +6,11 @@
 #define VECTOR3_TEST_SCENE_H
 #include <algorithm>
 #include <vector>
+
+#include "../Plane.h"
 #include "../sphere/Sphere.h"
 #include "../camera/Camera.h"
+#include "../Entity.h"
 
 const Color lightColor = { 255,  255, 255};
 class Pixel {
@@ -37,6 +40,7 @@ class Scene {
 
     Camera camera = Camera({0,0,0}, {0, 100, 0}, 1920, 1080);
     std::vector<Sphere> spheres = {};
+    std::vector<Plane> planes = {};
     std::vector<Light> lights = {};
     std::vector<Pixel *> pixels = {};
 
@@ -48,9 +52,11 @@ class Scene {
 
     void addLight(const Light &light) { lights.push_back(light); }
 
-    void computeColor(Ray const& currentRay, const Pixel *currentPixel, Sphere const &sphere) {
+    void addPlane(const Plane &plane) { planes.push_back(plane); }
+
+    void computeColor(Ray const& currentRay, const Pixel *currentPixel, Entity const &intersectedObject) {
         const Vector3 ambientColor =
-                sphere.color.albedoMultiplication(lightColor) * 0.5;
+                intersectedObject.color.albedoMultiplication(lightColor) * 0.5;
             Vector3 finalColor = ambientColor;
 
         for (Light const &light : this->lights) {
@@ -65,7 +71,7 @@ class Scene {
                     )), 10);
 
             const Vector3 diffuseColor =
-                    sphere.color.albedoMultiplication(lightColor)
+                    intersectedObject.color.albedoMultiplication(lightColor)
                     * 1 * std::max(0.0, currentRay.intersection.lightHits);
 
             const Vector3 specularColor = lightColor.albedoMultiplication(lightColor) * 1 * currentRay.intersection.specularIntensity;
@@ -80,6 +86,7 @@ class Scene {
 
     void render() {
         auto currentRay = Ray(this->camera.position);
+        const Entity *currentIntersectedObject = nullptr;
         for (int i = 0; i < this->camera.screenDimension.x; i++) {
             for (int j = 0; j < this->camera.screenDimension.y; j++) {
                 const double currentIndex = i + (j * this->camera.screenDimension.x);
@@ -90,15 +97,25 @@ class Scene {
                 this->pixels[currentIndex] = currentPixel;
                 currentPixel->x = i;
                 currentPixel->y = j;
-                currentPixel->blue = static_cast<unsigned>(255);
-                currentPixel->green = static_cast<unsigned>(255);
-                currentPixel->red = static_cast<unsigned>(255);
+                currentPixel->blue = static_cast<unsigned>(0);
+                currentPixel->green = static_cast<unsigned>(0);
+                currentPixel->red = static_cast<unsigned>(0);
                 currentRay.direction = this->camera.getScreenPixelVector(i, j);
                 currentRay.intersection = {};
+                currentIntersectedObject = nullptr;
+
                 for (Sphere const &sphere : this->spheres) {
                     if (sphere.doesIntersect(&currentRay)) {
-                        computeColor(currentRay, currentPixel, sphere);
+                        currentIntersectedObject = &sphere;
                     }
+                }
+                for (Plane const &plane : this->planes) {
+                    if (plane.doesIntersect(&currentRay)) {
+                        currentIntersectedObject = &plane;
+                    }
+                }
+                if (currentIntersectedObject) {
+                        computeColor(currentRay, currentPixel, *currentIntersectedObject);
                 }
             }
         }

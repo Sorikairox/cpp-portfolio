@@ -17,7 +17,10 @@ add_executable(raytracer MACOSX_BUNDLE main.cpp
         vector/Vector2.h
         sphere/Sphere.h
         ray/Ray.h
-        scene/Scene.h)
+        scene/Scene.h
+        Plane.h
+        Entity.h
+        Color.h)
 target_link_libraries(raytracer PRIVATE SDL3::SDL3)
 
 project(vector3_test)
@@ -36,7 +39,10 @@ add_executable(all_test vector/Vector3.test.cpp
         vector/Vector2.h
         sphere/Sphere.h
         ray/Ray.h
-        scene/Scene.h)
+        scene/Scene.h
+        Plane.h
+        Entity.h
+        Color.h)
 target_link_libraries(
         all_test
         GTest::gtest_main
