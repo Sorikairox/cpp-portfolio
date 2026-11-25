@@ -12,7 +12,7 @@ class Plane: public Entity {
 public:
     Vector3 normal = {0, 0, 1};
 
-    Plane(const Vector3 &origin, const Vector3 &normal, Color color) : Entity{origin, color}, normal(normal) {}
+    Plane(const Vector3 &origin, const Vector3 &normal) : Entity{origin}, normal(normal) {}
     bool doesIntersect(const Ray *ray) const {
         double closestDistance = (Vector3::dotProduct((this->origin - ray->origin), this->normal) / Vector3::dotProduct(ray->direction, this->normal));
 

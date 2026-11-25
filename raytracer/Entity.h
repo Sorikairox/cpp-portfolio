@@ -7,16 +7,24 @@
 #include "Color.h"
 #include "ray/Ray.h"
 
+class Material {
+public:
+    double reflectivity = 0.5;
+    Color color;
+};
+
 class Entity {
 public:
     explicit Entity(const Vector3 &origin): origin{origin} {};
-    Entity(const Vector3 &origin, const Color &color) : origin{origin}, color{color} {};
     virtual ~Entity() = default;
 
+    void attachMaterial(Material *m) {
+        this->material = m;
+    }
+
     Vector3 origin;
-        Color color;
-        bool doesIntersect(Ray *ray) const;
-        double reflectivity = 0;
+    bool doesIntersect(Ray *ray) const;
+    Material *material;
 };
 
 #endif //VECTOR3_TEST_ENTITY_H

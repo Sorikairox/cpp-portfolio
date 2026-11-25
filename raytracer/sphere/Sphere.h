@@ -18,8 +18,6 @@ public:
     Sphere(const Vector3 &origin, const double &radius) : Entity{origin}, radius(radius) {
     };
 
-    Sphere(const Vector3 &origin, const double &radius, const Color &color) : Entity{origin, color}, radius(radius) {};
-
     virtual bool doesIntersect(const Ray *ray) const {
         const double b = 2.0 * Vector3::dotProduct(ray->direction, (ray->origin - this->origin));
         const double c = Vector3::dotProduct((ray->origin - this->origin), (ray->origin - this->origin)) - std::pow(

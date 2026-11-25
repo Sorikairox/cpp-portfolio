@@ -14,16 +14,25 @@ int main() {
     SDL_Renderer *renderer = SDL_CreateRenderer(window, nullptr);
     SDL_GetRenderOutputSize(renderer, &w, &h);
 
-    auto reflectiveSphere = Sphere({0, -30, 0}, 10, {212, 175, 55, 255});
-    const auto camera = Camera({-50, 0, 0}, {0, 0, 0},  w, h);
-    auto *scene = new Scene(camera);
-    scene->addSphere(Sphere({0, 0, 0}, 10, {255, 0, 0, 255}));
+    auto goldMaterial = new Material{0.8, {212, 175, 55, 255}};
+    auto reflectiveSphere = Sphere({0, -30, 0}, 10);
+    reflectiveSphere.attachMaterial(goldMaterial);
 
-    reflectiveSphere.reflectivity = 0.8;
+    auto redMaterial = new Material{0, {255, 0, 0, 255}};
+    auto redSphere = Sphere({0, 0, 0}, 10);
+    redSphere.attachMaterial(redMaterial);
+    const auto camera = Camera({-50, 0, 0}, {0, 0, 0},  w, h);
+
+    auto *scene = new Scene(camera);
+    scene->addSphere(redSphere);
     scene->addSphere(reflectiveSphere);
 
+    auto whitePlane = Plane{Vector3{0,0,-10}, Vector3{0,0,1}};
+    whitePlane.attachMaterial(new Material{0, {255, 255, 255, 255}});
+
     scene->addLight(Light{Vector3{-50, 0, 500}, Vector3{0, 0, 0}});
-    scene->addPlane(Plane{Vector3{0,0,-10}, Vector3{0,0,1}, {255, 255,255}});
+    scene->addPlane(whitePlane);
+
     scene->render();
     SDL_RenderClear(renderer);
     for (Pixel const *pixel: scene->pixels) {

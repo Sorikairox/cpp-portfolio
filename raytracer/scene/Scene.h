@@ -61,7 +61,7 @@ class Scene {
 
     Color computeColor(Ray const& currentRay, Entity const &intersectedObject) {
         const Vector3 ambientColor =
-                intersectedObject.color.albedoMultiplication(lightColor) * 0.5;
+                intersectedObject.material->color.albedoMultiplication(lightColor) * 0.5;
             Vector3 finalColor = ambientColor;
 
         for (Light const &light : this->lights) {
@@ -82,7 +82,7 @@ class Scene {
                     )), 10);
 
             const Vector3 diffuseColor =
-                    intersectedObject.color.albedoMultiplication(lightColor)
+                    intersectedObject.material->color.albedoMultiplication(lightColor)
                     * 1 * std::max(0.0, currentRay.intersection.lightHits);
 
             const Vector3 specularColor = lightColor.albedoMultiplication(lightColor) * 1 * currentRay.intersection.specularIntensity;
@@ -133,7 +133,7 @@ class Scene {
 
         Color finalColor = computeColor(currentRay, *currentIntersectedObject);
 
-        if (currentIntersectedObject->reflectivity <= 0)
+        if (currentIntersectedObject->material->reflectivity <= 0)
             return finalColor;
 
         currentRay.intersection.reflectionDirection = Vector3::normalize(currentRay.direction - currentRay.intersection.surfaceNormal * 2 *
@@ -142,7 +142,7 @@ class Scene {
         Ray reflectionRay = Ray(currentRay.intersection.position + currentRay.intersection.surfaceNormal * 1e-4, currentRay.intersection.reflectionDirection);
         Color reflectionColor = computeRayColor(reflectionRay, depth - 1);
 
-        return mixColors(finalColor, reflectionColor, currentIntersectedObject->reflectivity);
+        return mixColors(finalColor, reflectionColor, currentIntersectedObject->material->reflectivity);
     }
 
     Color computePixelColor(int i, int j) {
