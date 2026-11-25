@@ -5,6 +5,8 @@
 #ifndef VECTOR3_TEST_SCENE_H
 #define VECTOR3_TEST_SCENE_H
 #include <algorithm>
+#include <atomic>
+#include <thread>
 #include <vector>
 #include <random>
 
@@ -55,7 +57,17 @@ class Scene {
     std::vector<Pixel *> pixels = {};
 
     explicit Scene(const Camera &camera) : camera(camera) {
-        this->pixels.resize(camera.screenDimension.x * camera.screenDimension.y, nullptr);
+        const int width = static_cast<int>(camera.screenDimension.x);
+        const int height = static_cast<int>(camera.screenDimension.y);
+        this->pixels.resize(width * height, nullptr);
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                Pixel *pixel = new Pixel{255, 255, 255, 1};
+                pixel->x = x;
+                pixel->y = y;
+                this->pixels[x + y * width] = pixel;
+            }
+        }
     }
 
     void addSphere(const Sphere &sphere) { spheres.push_back(sphere); }
@@ -159,31 +171,52 @@ class Scene {
         return toColor(computeRayColor(currentRay));
     }
 
-    void render() {
-        for (int i = 0; i < this->camera.screenDimension.x; i++) {
-            for (int j = 0; j < this->camera.screenDimension.y; j++) {
-                const double currentIndex = i + (j * this->camera.screenDimension.x);
-                Pixel *currentPixel = this->pixels[currentIndex];
-                if (currentPixel== nullptr)
-                    currentPixel = new Pixel{static_cast<unsigned>(255), static_cast<unsigned>(255), static_cast<unsigned>(255), 1};
-
-                this->pixels[currentIndex] = currentPixel;
-                currentPixel->x = i;
-                currentPixel->y = j;
-                int redSum = 0;
-                int greenSum = 0;
-                int blueSum = 0;
-                for (int sampleIndex = 0; sampleIndex < this->sampleNumberPerPixel; sampleIndex++) {
-                    const Color sample = this->computePixelColor(i, j);
-                    redSum += sample.r;
-                    greenSum += sample.g;
-                    blueSum += sample.b;
-                }
-                currentPixel->red = static_cast<unsigned char>(redSum * this->pixelColorScale);
-                currentPixel->green = static_cast<unsigned char>(greenSum * this->pixelColorScale);
-                currentPixel->blue = static_cast<unsigned char>(blueSum * this->pixelColorScale);
-            }
+    void renderPixel(int i, int j) {
+        Pixel *currentPixel = this->pixels[i + j * static_cast<int>(this->camera.screenDimension.x)];
+        int redSum = 0;
+        int greenSum = 0;
+        int blueSum = 0;
+        for (int sampleIndex = 0; sampleIndex < this->sampleNumberPerPixel; sampleIndex++) {
+            const Color sample = this->computePixelColor(i, j);
+            redSum += sample.r;
+            greenSum += sample.g;
+            blueSum += sample.b;
         }
+        currentPixel->red = static_cast<unsigned char>(redSum * this->pixelColorScale);
+        currentPixel->green = static_cast<unsigned char>(greenSum * this->pixelColorScale);
+        currentPixel->blue = static_cast<unsigned char>(blueSum * this->pixelColorScale);
+    }
+
+    // Splits the screen into tiles; each thread grabs the next free tile when done,
+    // so busy regions don't leave other cores idle.
+    void render() {
+        const int width = static_cast<int>(this->camera.screenDimension.x);
+        const int height = static_cast<int>(this->camera.screenDimension.y);
+        const int tileSize = 16;
+        const int tilesX = (width + tileSize - 1) / tileSize;
+        const int tilesY = (height + tileSize - 1) / tileSize;
+        const int tileCount = tilesX * tilesY;
+
+        std::atomic nextTile{0};
+
+        auto worker = [&] {
+            for (int tile = nextTile++; tile < tileCount; tile = nextTile++) {
+                const int x0 = (tile % tilesX) * tileSize;
+                const int y0 = (tile / tilesX) * tileSize;
+                for (int j = y0; j < std::min(y0 + tileSize, height); j++)
+                    for (int i = x0; i < std::min(x0 + tileSize, width); i++)
+                        this->renderPixel(i, j);
+            }
+        };
+
+        const unsigned threadCount = std::max(1u, std::thread::hardware_concurrency());
+        std::vector<std::thread> threads;
+        threads.reserve(threadCount);
+        for (unsigned t = 0; t < threadCount; t++)
+            threads.emplace_back(worker);
+
+        for (std::thread &thread : threads)
+            thread.join();
     }
 
     static double getRandomDouble() {
