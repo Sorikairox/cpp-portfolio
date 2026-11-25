@@ -16,6 +16,7 @@ public:
     Vector3 origin;
         Color color;
         bool doesIntersect(Ray *ray) const;
+        double reflectivity = 0;
 };
 
 #endif //VECTOR3_TEST_ENTITY_H

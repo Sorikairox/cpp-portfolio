@@ -14,12 +14,16 @@ int main() {
     SDL_Renderer *renderer = SDL_CreateRenderer(window, nullptr);
     SDL_GetRenderOutputSize(renderer, &w, &h);
 
-    auto sphere = Sphere({0, 0, 0}, 10, {255, 0, 0, 255});
+    auto reflectiveSphere = Sphere({0, -30, 0}, 10, {212, 175, 55, 255});
     const auto camera = Camera({-50, 0, 0}, {0, 0, 0},  w, h);
     auto *scene = new Scene(camera);
-    scene->addSphere(sphere);
+    scene->addSphere(Sphere({0, 0, 0}, 10, {255, 0, 0, 255}));
+
+    reflectiveSphere.reflectivity = 0.8;
+    scene->addSphere(reflectiveSphere);
+
     scene->addLight(Light{Vector3{-50, 0, 500}, Vector3{0, 0, 0}});
-    scene->addPlane(Plane{Vector3{0,0,-50}, Vector3{0,0,1}, {255, 255,255}});
+    scene->addPlane(Plane{Vector3{0,0,-10}, Vector3{0,0,1}, {255, 255,255}});
     scene->render();
     SDL_RenderClear(renderer);
     for (Pixel const *pixel: scene->pixels) {

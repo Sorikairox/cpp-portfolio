@@ -16,7 +16,7 @@ public:
     bool doesIntersect(const Ray *ray) const {
         double closestDistance = (Vector3::dotProduct((this->origin - ray->origin), this->normal) / Vector3::dotProduct(ray->direction, this->normal));
 
-        if (closestDistance <= 0 || closestDistance > ray->intersection.distance) {
+        if (closestDistance <= 1e-4 || closestDistance > ray->intersection.distance) {
             return false;
         }
 

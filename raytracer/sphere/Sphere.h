@@ -34,7 +34,7 @@ public:
         const double farthestHit = (-b + sqrtDelta) / 2.0; // farthest hit
 
         // Both negative: the sphere is behind the ray
-        if (farthestHit < 0)
+        if (farthestHit < 1e-4)
             return false;
 
         const double closestHitInFront = nearestHit >= 0 ? nearestHit : farthestHit;

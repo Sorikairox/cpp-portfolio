@@ -69,6 +69,12 @@ class Scene {
             currentRay.intersection.directionToLight = Vector3::normalize(light.position - currentRay.intersection.position);
             currentRay.intersection.lightHits = Vector3::dotProduct(currentRay.intersection.surfaceNormal,
                                                               currentRay.intersection.directionToLight);
+
+            auto shadowRay = Ray(currentRay.intersection.position + currentRay.intersection.surfaceNormal * 1e-4, currentRay.intersection.directionToLight);
+
+            if (getIntersectEntity(shadowRay) != nullptr) {
+                continue;
+            }
             //H
             currentRay.intersection.specularIntensity = std::pow(
                 std::max(0.0, Vector3::dotProduct(currentRay.intersection.surfaceNormal,
@@ -94,14 +100,16 @@ class Scene {
     }
 
 
-    Color compute_ray_color(int i, int j) {
-        auto currentRay = Ray(this->camera.position);
-        Vector3 offset = sampleSquare();
-        currentRay.direction = this->camera.getScreenPixelVector(i + offset.x, j + offset.y);
+    static Color mixColors(const Color &a, const Color &b, double t) {
+        return Color{
+            static_cast<unsigned char>(a.r * (1 - t) + b.r * t),
+            static_cast<unsigned char>(a.g * (1 - t) + b.g * t),
+            static_cast<unsigned char>(a.b * (1 - t) + b.b * t),
+            255};
+    }
 
-        currentRay.intersection = {};
+    [[nodiscard]] const Entity *getIntersectEntity(Ray const& currentRay) const {
         const Entity *currentIntersectedObject = nullptr;
-        Color finalColor = {0, 0, 0};
         for (Sphere const &sphere : this->spheres) {
             if (sphere.doesIntersect(&currentRay)) {
                 currentIntersectedObject = &sphere;
@@ -112,9 +120,38 @@ class Scene {
                 currentIntersectedObject = &plane;
             }
         }
-        if (currentIntersectedObject) {
-            finalColor += computeColor(currentRay, *currentIntersectedObject);
-        }
+        return currentIntersectedObject;
+    }
+
+    Color computeRayColor(Ray currentRay, int depth = 10) {
+        if (depth == 0)
+            return {0,0,0};
+
+        const Entity *currentIntersectedObject = getIntersectEntity(currentRay);
+        if (!currentIntersectedObject)
+            return {0,0,0};
+
+        Color finalColor = computeColor(currentRay, *currentIntersectedObject);
+
+        if (currentIntersectedObject->reflectivity <= 0)
+            return finalColor;
+
+        currentRay.intersection.reflectionDirection = Vector3::normalize(currentRay.direction - currentRay.intersection.surfaceNormal * 2 *
+            Vector3::dotProduct(currentRay.direction,currentRay.intersection.surfaceNormal));
+
+        Ray reflectionRay = Ray(currentRay.intersection.position + currentRay.intersection.surfaceNormal * 1e-4, currentRay.intersection.reflectionDirection);
+        Color reflectionColor = computeRayColor(reflectionRay, depth - 1);
+
+        return mixColors(finalColor, reflectionColor, currentIntersectedObject->reflectivity);
+    }
+
+    Color computePixelColor(int i, int j) {
+        auto currentRay = Ray(this->camera.position);
+        Vector3 offset = sampleSquare();
+        currentRay.direction = this->camera.getScreenPixelVector(i + offset.x, j + offset.y);
+
+        currentRay.intersection = {};
+        Color finalColor = computeRayColor(currentRay);
         return finalColor;
     }
 
@@ -133,7 +170,7 @@ class Scene {
                 int greenSum = 0;
                 int blueSum = 0;
                 for (int sampleIndex = 0; sampleIndex < this->sampleNumberPerPixel; sampleIndex++) {
-                    const Color sample = this->compute_ray_color(i, j);
+                    const Color sample = this->computePixelColor(i, j);
                     redSum += sample.r;
                     greenSum += sample.g;
                     blueSum += sample.b;

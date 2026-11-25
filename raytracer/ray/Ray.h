@@ -13,6 +13,7 @@ public:
     Vector3 surfaceNormal = {0, 0, 0};
     Vector3 position = {0, 0, 0};
     Vector3 directionToLight = {0, 0, 0};
+    Vector3 reflectionDirection = {0, 0, 0};
     double lightHits;
     double specularIntensity;
 };
