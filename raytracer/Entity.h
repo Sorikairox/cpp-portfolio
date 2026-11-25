@@ -11,6 +11,9 @@ class Material {
 public:
     double reflectivity = 0.5;
     Color color;
+    double specularStrength = 0.5;
+    double shininess = 32.0;
+    Color specularColor = {255, 255, 255, 255};
 };
 
 class Entity {

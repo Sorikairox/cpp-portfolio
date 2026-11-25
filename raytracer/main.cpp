@@ -14,7 +14,7 @@ int main() {
     SDL_Renderer *renderer = SDL_CreateRenderer(window, nullptr);
     SDL_GetRenderOutputSize(renderer, &w, &h);
 
-    auto goldMaterial = new Material{0.8, {212, 175, 55, 255}};
+    auto goldMaterial = new Material{0, {212, 175, 55, 255}, 1, 32.0, {212, 175, 55, 255}};
     auto reflectiveSphere = Sphere({0, -30, 0}, 10);
     reflectiveSphere.attachMaterial(goldMaterial);
 

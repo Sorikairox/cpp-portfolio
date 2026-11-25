@@ -37,6 +37,11 @@ public:
 
 
 
+struct Shading {
+    Vector3 diffuse;   // ambient + diffuse
+    Vector3 specular;  // highlights only, added after reflection mixing
+};
+
 class Scene {
 
     int sampleNumberPerPixel = 10;
@@ -59,10 +64,11 @@ class Scene {
 
     void addPlane(const Plane &plane) { planes.push_back(plane); }
 
-    Color computeColor(Ray const& currentRay, Entity const &intersectedObject) {
+    [[nodiscard]] Shading computeShading(Ray const& currentRay, Entity const &intersectedObject) const {
         const Vector3 ambientColor =
                 intersectedObject.material->color.albedoMultiplication(lightColor) * 0.5;
-            Vector3 finalColor = ambientColor;
+        Vector3 diffuseColor = ambientColor;
+        Vector3 specularColor = {0,0,0};
 
         for (Light const &light : this->lights) {
             // L
@@ -79,34 +85,29 @@ class Scene {
             currentRay.intersection.specularIntensity = std::pow(
                 std::max(0.0, Vector3::dotProduct(currentRay.intersection.surfaceNormal,
                     Vector3::normalize(currentRay.intersection.directionToLight -currentRay.direction)
-                    )), 10);
+                    )), intersectedObject.material->shininess);
 
-            const Vector3 diffuseColor =
+            diffuseColor = diffuseColor + (
                     intersectedObject.material->color.albedoMultiplication(lightColor)
-                    * 1 * std::max(0.0, currentRay.intersection.lightHits);
+                    * 1 * std::max(0.0, currentRay.intersection.lightHits));
 
-            const Vector3 specularColor = lightColor.albedoMultiplication(lightColor) * 1 * currentRay.intersection.specularIntensity;
-            finalColor = finalColor + diffuseColor + specularColor;
+            specularColor = specularColor + lightColor.albedoMultiplication(intersectedObject.material->specularColor) * intersectedObject.material->specularStrength * currentRay.intersection.specularIntensity;
         }
 
+        return Shading{diffuseColor, specularColor};
+    }
 
-        return Color{static_cast<unsigned char>(std::clamp(finalColor.x * 255, 0.0, 255.0)),
-            static_cast<unsigned char>(std::clamp(finalColor.y * 255, 0.0, 255.0)),
-            static_cast<unsigned char>(std::clamp(finalColor.z * 255, 0.0, 255.0))};
+    static Color toColor(const Vector3 &color) {
+        return Color{static_cast<unsigned char>(std::clamp(color.x * 255, 0.0, 255.0)),
+            static_cast<unsigned char>(std::clamp(color.y * 255, 0.0, 255.0)),
+            static_cast<unsigned char>(std::clamp(color.z * 255, 0.0, 255.0)),
+            255};
     }
 
     static Vector3 sampleSquare() {
         return {getRandomDouble() - 0.5, getRandomDouble() - 0.5, 0};
     }
 
-
-    static Color mixColors(const Color &a, const Color &b, double t) {
-        return Color{
-            static_cast<unsigned char>(a.r * (1 - t) + b.r * t),
-            static_cast<unsigned char>(a.g * (1 - t) + b.g * t),
-            static_cast<unsigned char>(a.b * (1 - t) + b.b * t),
-            255};
-    }
 
     [[nodiscard]] const Entity *getIntersectEntity(Ray const& currentRay) const {
         const Entity *currentIntersectedObject = nullptr;
@@ -123,7 +124,8 @@ class Scene {
         return currentIntersectedObject;
     }
 
-    Color computeRayColor(Ray currentRay, int depth = 10) {
+    // Returns linear color in [0, 1+] range; clamped only once in computePixelColor.
+    Vector3 computeRayColor(Ray currentRay, int depth = 10) {
         if (depth == 0)
             return {0,0,0};
 
@@ -131,18 +133,21 @@ class Scene {
         if (!currentIntersectedObject)
             return {0,0,0};
 
-        Color finalColor = computeColor(currentRay, *currentIntersectedObject);
+        const Shading shading = computeShading(currentRay, *currentIntersectedObject);
+        const double reflectivity = currentIntersectedObject->material->reflectivity;
 
-        if (currentIntersectedObject->material->reflectivity <= 0)
-            return finalColor;
+        if (reflectivity <= 0)
+            return shading.diffuse + shading.specular;
 
         currentRay.intersection.reflectionDirection = Vector3::normalize(currentRay.direction - currentRay.intersection.surfaceNormal * 2 *
             Vector3::dotProduct(currentRay.direction,currentRay.intersection.surfaceNormal));
 
         Ray reflectionRay = Ray(currentRay.intersection.position + currentRay.intersection.surfaceNormal * 1e-4, currentRay.intersection.reflectionDirection);
-        Color reflectionColor = computeRayColor(reflectionRay, depth - 1);
+        const Vector3 reflectionColor = computeRayColor(reflectionRay, depth - 1);
 
-        return mixColors(finalColor, reflectionColor, currentIntersectedObject->material->reflectivity);
+        // Mix only the diffuse part with the reflection; the highlight is added on top so it is never dimmed.
+        const Vector3 mixed = shading.diffuse * (1 - reflectivity) + reflectionColor * reflectivity;
+        return mixed + shading.specular;
     }
 
     Color computePixelColor(int i, int j) {
@@ -151,8 +156,7 @@ class Scene {
         currentRay.direction = this->camera.getScreenPixelVector(i + offset.x, j + offset.y);
 
         currentRay.intersection = {};
-        Color finalColor = computeRayColor(currentRay);
-        return finalColor;
+        return toColor(computeRayColor(currentRay));
     }
 
     void render() {
