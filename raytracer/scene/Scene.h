@@ -6,6 +6,7 @@
 #define VECTOR3_TEST_SCENE_H
 #include <algorithm>
 #include <vector>
+#include <random>
 
 #include "../Plane.h"
 #include "../sphere/Sphere.h"
@@ -34,8 +35,12 @@ public:
     Light(Vector3 const &position, Vector3 const &direction): position(position), direction(direction) {}
 };
 
+
+
 class Scene {
 
+    int sampleNumberPerPixel = 10;
+    double pixelColorScale = 1.0 / this->sampleNumberPerPixel;
     public:
 
     Camera camera = Camera({0,0,0}, {0, 100, 0}, 1920, 1080);
@@ -54,7 +59,7 @@ class Scene {
 
     void addPlane(const Plane &plane) { planes.push_back(plane); }
 
-    void computeColor(Ray const& currentRay, const Pixel *currentPixel, Entity const &intersectedObject) {
+    Color computeColor(Ray const& currentRay, Entity const &intersectedObject) {
         const Vector3 ambientColor =
                 intersectedObject.color.albedoMultiplication(lightColor) * 0.5;
             Vector3 finalColor = ambientColor;
@@ -79,14 +84,41 @@ class Scene {
         }
 
 
-        currentPixel->blue = std::clamp(finalColor.z * 255, 0.0, 255.0);
-        currentPixel->green = std::clamp(finalColor.y * 255, 0.0, 255.0);
-        currentPixel->red = std::clamp(finalColor.x * 255, 0.0, 255.0);
+        return Color{static_cast<unsigned char>(std::clamp(finalColor.x * 255, 0.0, 255.0)),
+            static_cast<unsigned char>(std::clamp(finalColor.y * 255, 0.0, 255.0)),
+            static_cast<unsigned char>(std::clamp(finalColor.z * 255, 0.0, 255.0))};
+    }
+
+    static Vector3 sampleSquare() {
+        return {getRandomDouble() - 0.5, getRandomDouble() - 0.5, 0};
+    }
+
+
+    Color compute_ray_color(int i, int j) {
+        auto currentRay = Ray(this->camera.position);
+        Vector3 offset = sampleSquare();
+        currentRay.direction = this->camera.getScreenPixelVector(i + offset.x, j + offset.y);
+
+        currentRay.intersection = {};
+        const Entity *currentIntersectedObject = nullptr;
+        Color finalColor = {0, 0, 0};
+        for (Sphere const &sphere : this->spheres) {
+            if (sphere.doesIntersect(&currentRay)) {
+                currentIntersectedObject = &sphere;
+            }
+        }
+        for (Plane const &plane : this->planes) {
+            if (plane.doesIntersect(&currentRay)) {
+                currentIntersectedObject = &plane;
+            }
+        }
+        if (currentIntersectedObject) {
+            finalColor += computeColor(currentRay, *currentIntersectedObject);
+        }
+        return finalColor;
     }
 
     void render() {
-        auto currentRay = Ray(this->camera.position);
-        const Entity *currentIntersectedObject = nullptr;
         for (int i = 0; i < this->camera.screenDimension.x; i++) {
             for (int j = 0; j < this->camera.screenDimension.y; j++) {
                 const double currentIndex = i + (j * this->camera.screenDimension.x);
@@ -97,28 +129,31 @@ class Scene {
                 this->pixels[currentIndex] = currentPixel;
                 currentPixel->x = i;
                 currentPixel->y = j;
-                currentPixel->blue = static_cast<unsigned>(0);
-                currentPixel->green = static_cast<unsigned>(0);
-                currentPixel->red = static_cast<unsigned>(0);
-                currentRay.direction = this->camera.getScreenPixelVector(i, j);
-                currentRay.intersection = {};
-                currentIntersectedObject = nullptr;
-
-                for (Sphere const &sphere : this->spheres) {
-                    if (sphere.doesIntersect(&currentRay)) {
-                        currentIntersectedObject = &sphere;
-                    }
+                int redSum = 0;
+                int greenSum = 0;
+                int blueSum = 0;
+                for (int sampleIndex = 0; sampleIndex < this->sampleNumberPerPixel; sampleIndex++) {
+                    const Color sample = this->compute_ray_color(i, j);
+                    redSum += sample.r;
+                    greenSum += sample.g;
+                    blueSum += sample.b;
                 }
-                for (Plane const &plane : this->planes) {
-                    if (plane.doesIntersect(&currentRay)) {
-                        currentIntersectedObject = &plane;
-                    }
-                }
-                if (currentIntersectedObject) {
-                        computeColor(currentRay, currentPixel, *currentIntersectedObject);
-                }
+                currentPixel->red = static_cast<unsigned char>(redSum * this->pixelColorScale);
+                currentPixel->green = static_cast<unsigned char>(greenSum * this->pixelColorScale);
+                currentPixel->blue = static_cast<unsigned char>(blueSum * this->pixelColorScale);
             }
         }
+    }
+
+    static double getRandomDouble() {
+        thread_local std::mt19937 gen(std::random_device{}());
+        thread_local std::uniform_real_distribution distrib(0.0, 1.0);
+        return distrib(gen);
+    }
+
+    static double getRandomDouble(const double min, const double max) {
+        // Returns a random real in [min,max).
+        return min + (max-min)*getRandomDouble();
     }
 };
 

@@ -25,6 +25,14 @@ struct Color {
 
         return thisAlbedo * otherAlbedo;
     }
+
+    Color &operator+=(const Color &other) {
+        this->r = std::clamp(this->r + other.r, 0, 255);
+        this->g = std::clamp(this->g + other.g, 0, 255);
+        this->b = std::clamp(this->b + other.b, 0, 255);
+        this->a = std::clamp(this->a + other.a, 0, 255);
+        return *this;
+    };
 };
 
 #endif //VECTOR3_TEST_COLOR_H
